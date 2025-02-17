@@ -1,7 +1,12 @@
 import bcrypt from "bcrypt";
 
 import { User } from "../models/user.js";
-import { generateAccessToken, generateRefreshToken } from "../utils/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  resetPasswordToken,
+} from "../utils/jwt.js";
+import { transporter } from "../utils/mail.js";
 
 const register = async (req, res) => {
   try {
@@ -62,4 +67,59 @@ const login = async (req, res) => {
   }
 };
 
-export { register, login };
+const requestResetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const resetToken = resetPasswordToken({ id: user._id });
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpiry = Date.now() + 3600000;
+    await user.save();
+
+    const resetLink = `http://localhost:3000/reset-password/${resetToken}`;
+    await transporter.sendMail({
+      to: user.email,
+      subject: "Password Reset Request",
+      html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link will expire in 1 hour.</p>`,
+    });
+
+    res.json({ message: "Password reset link sent to email" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { newPassword } = req.body;
+
+    const decoded = jwt.verify(token, process.env.RESET_TOKEN_SECRET);
+    const user = await User.findOne({
+      _id: decoded.id,
+      resetPasswordToken: token,
+    });
+
+    if (!user || user.resetPasswordExpiry < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    await user.save();
+
+    res.json({ message: "Password reset successful" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export { register, login, requestResetPassword, resetPassword };

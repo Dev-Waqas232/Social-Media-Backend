@@ -27,10 +27,6 @@ const UserSchema = new Schema(
       required: true,
       enum: ["Male", "Female", "Other"],
     },
-    resetPassword: {
-      type: Boolean,
-      default: false,
-    },
     resetPasswordToken: {
       type: String,
       default: null,

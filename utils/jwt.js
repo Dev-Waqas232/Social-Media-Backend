@@ -14,4 +14,11 @@ const generateRefreshToken = (payload) => {
   return token;
 };
 
-export { generateAccessToken, generateRefreshToken };
+const resetPasswordToken = (payload) => {
+  const token = jwt.sign(payload, process.env.RESET_TOKEN_SECRET, {
+    expiresIn: "1h",
+  });
+  return token;
+};
+
+export { generateAccessToken, generateRefreshToken, resetPasswordToken };

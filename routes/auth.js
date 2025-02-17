@@ -1,6 +1,6 @@
 import express from "express";
 
-import { login, register } from "../controllers/auth.js";
+import { login, register, requestResetPassword } from "../controllers/auth.js";
 import { loginValidator, registerValidator } from "../validators/index.js";
 import { validate } from "../middlewares/validate.js";
 
@@ -16,5 +16,9 @@ const router = express.Router();
 router.post("/register", registerValidator, validate, register);
 
 router.post("/login", loginValidator, validate, login);
+
+router.post("/request-reset-password", requestResetPassword);
+
+router.post("/reset-password/:token", resetPassword);
 
 export { router as authRouter };
