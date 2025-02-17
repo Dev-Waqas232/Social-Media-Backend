@@ -1,0 +1,20 @@
+import express from "express";
+
+import { login, register } from "../controllers/auth.js";
+import { loginValidator, registerValidator } from "../validators/index.js";
+import { validate } from "../middlewares/validate.js";
+
+const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: Authentication
+ *   description: Authentication endpoints
+ */
+
+router.post("/register", registerValidator, validate, register);
+
+router.post("/login", loginValidator, validate, login);
+
+export { router as authRouter };
